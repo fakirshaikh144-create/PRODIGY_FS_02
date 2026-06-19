@@ -9,11 +9,11 @@ export const Button = ({ children, className, ...props }: any) => (
 );
 
 export const Input = ({ className, ...props }: any) => (
-  <input className={`rounded border border-gray-300 px-3 py-2 ${className}`} {...props} />
+  <input className={`rounded border border-gray-300 bg-white px-3 py-2 text-gray-900 ${className}`} {...props} />
 );
 
 export const Card = ({ children, className }: any) => (
-  <div className={`rounded border border-gray-200 bg-white p-4 shadow-sm ${className}`}>{children}</div>
+  <div className={`rounded border border-gray-200 bg-white p-4 text-gray-900 shadow-sm ${className}`}>{children}</div>
 );
 
 export const Table = ({ children }: any) => <table className="w-full border-collapse">{children}</table>;

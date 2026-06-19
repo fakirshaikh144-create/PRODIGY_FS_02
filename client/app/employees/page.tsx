@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Card, Input, Button } from '@/components/ui';
+import { Card, Input } from '@/components/ui';
 import { Employee } from '@/lib/types';
 
 export default function EmployeesPage() {
@@ -13,37 +12,36 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const router = useRouter();
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
     const fetchEmployees = async () => {
+      setLoading(true);
       try {
         const res = await api.employees.list(page, 10, search);
         setEmployees(res.data.data);
         setTotal(res.data.meta.total);
+        setError('');
       } catch (error) {
         console.error('Failed to fetch employees:', error);
+        setError('Failed to load employees.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchEmployees();
-  }, [router, page, search]);
+  }, [page, search]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure?')) return;
     try {
       await api.employees.delete(id);
       setEmployees(employees.filter((e) => e.id !== id));
+      setTotal((current) => Math.max(0, current - 1));
     } catch (error) {
       console.error('Failed to delete employee:', error);
+      setError('Failed to delete employee.');
     }
   };
 
@@ -62,6 +60,8 @@ export default function EmployeesPage() {
         <Input type="text" placeholder="Search by name, email, or ID..." value={search} onChange={(e: any) => setSearch(e.target.value)} className="w-full" />
       </Card>
 
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b bg-gray-50">
@@ -75,6 +75,13 @@ export default function EmployeesPage() {
             </tr>
           </thead>
           <tbody>
+            {employees.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  No employees found.
+                </td>
+              </tr>
+            ) : null}
             {employees.map((emp) => (
               <tr key={emp.id} className="border-b">
                 <td className="px-4 py-2">{emp.employeeId}</td>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Card, Input, Button } from '@/components/ui';
+import { employeeSchema, EmployeeFormValues } from '@/lib/validators';
 
 export default function AddEmployeePage() {
   const [formData, setFormData] = useState({
@@ -30,10 +31,18 @@ export default function AddEmployeePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const validation = employeeSchema.safeParse(formData);
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message || 'Please review the employee details.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.employees.create({ ...formData, salary: parseFloat(formData.salary) });
+      const payload: EmployeeFormValues = validation.data;
+      await api.employees.create(payload);
       router.push('/employees');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create employee');
@@ -105,7 +114,7 @@ export default function AddEmployeePage() {
             <Button disabled={loading} className="flex-1">
               {loading ? 'Creating...' : 'Create Employee'}
             </Button>
-            <button onClick={() => router.back()} className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50">
+            <button type="button" onClick={() => router.back()} className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50">
               Cancel
             </button>
           </div>

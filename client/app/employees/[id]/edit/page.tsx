@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Card, Input, Button } from '@/components/ui';
-import { Employee } from '@/lib/types';
+import { employeeSchema, EmployeeFormValues } from '@/lib/validators';
 
 export default function EditEmployeePage() {
-  const [formData, setFormData] = useState<any>(null);
+  const [formData, setFormData] = useState<EmployeeFormValues | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -19,7 +19,19 @@ export default function EditEmployeePage() {
     const fetchEmployee = async () => {
       try {
         const res = await api.employees.get(id);
-        setFormData(res.data.employee);
+        setFormData({
+          employeeId: res.data.employee.employeeId,
+          fullName: res.data.employee.fullName,
+          email: res.data.employee.email,
+          phone: res.data.employee.phone,
+          department: res.data.employee.department,
+          position: res.data.employee.position,
+          salary: res.data.employee.salary,
+          dateOfJoining: res.data.employee.dateOfJoining?.split('T')[0],
+          status: res.data.employee.status,
+          address: res.data.employee.address,
+          emergencyContact: res.data.employee.emergencyContact,
+        });
       } catch (err: any) {
         setError('Failed to load employee');
       } finally {
@@ -31,15 +43,24 @@ export default function EditEmployeePage() {
   }, [id]);
 
   const handleChange = (e: any) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((current) => (current ? { ...current, [e.target.name]: e.target.value } : current));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    const validation = employeeSchema.safeParse(formData);
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message || 'Please review the employee details.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      await api.employees.update(id, { ...formData, salary: parseFloat(formData.salary) });
+      const payload: EmployeeFormValues = validation.data;
+      await api.employees.update(id, payload);
       router.push('/employees');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update employee');
@@ -90,7 +111,7 @@ export default function EditEmployeePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Date of Joining</label>
-              <Input type="date" name="dateOfJoining" value={formData.dateOfJoining?.split('T')[0]} onChange={handleChange} required />
+              <Input type="date" name="dateOfJoining" value={formData.dateOfJoining} onChange={handleChange} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Status</label>
@@ -114,7 +135,7 @@ export default function EditEmployeePage() {
             <Button disabled={submitting} className="flex-1">
               {submitting ? 'Updating...' : 'Update Employee'}
             </Button>
-            <button onClick={() => router.back()} className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50">
+            <button type="button" onClick={() => router.back()} className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-50">
               Cancel
             </button>
           </div>

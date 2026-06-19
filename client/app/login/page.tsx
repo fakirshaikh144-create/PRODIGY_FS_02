@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { loginSchema } from '@/lib/validators';
 import { Input, Button } from '@/components/ui';
 
 export default function LoginPage() {
@@ -11,15 +12,22 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const validation = loginSchema.safeParse({ email, password });
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message || 'Invalid login details.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await api.auth.login(email, password);
-      localStorage.setItem('token', res.data.token);
+      await login(validation.data.email, validation.data.password);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed');

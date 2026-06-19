@@ -8,25 +8,35 @@ import { useAuth } from "../hooks/useAuth";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
-  const [mounted, setMounted] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    setToken(savedToken);
-    setMounted(true);
+    if (isLoading) {
+      return;
+    }
 
-    if (!savedToken && pathname !== "/login") {
+    if (pathname === "/login" && isAuthenticated) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    if (pathname !== "/login" && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [pathname, router]);
+  }, [isAuthenticated, isLoading, pathname, router]);
 
-  if (!mounted) return <div className="p-6">Loading...</div>;
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+    router.replace("/login");
+  };
+
+  if (isLoading) return <div className="p-6">Loading...</div>;
 
   if (pathname === "/login") return children;
 
-  if (!token) return <div className="p-6">Redirecting to login...</div>;
+  if (!isAuthenticated) return <div className="p-6">Redirecting to login...</div>;
 
   const navItems = [
     { href: "/dashboard" as const, label: "Dashboard" },
@@ -43,15 +53,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         <nav className="flex flex-col gap-1 p-4">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="rounded px-4 py-2 hover:bg-gray-800">
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`rounded px-4 py-2 hover:bg-gray-800 ${pathname === item.href ? "bg-gray-800" : ""}`}
+            >
               {item.label}
             </Link>
           ))}
         </nav>
 
         <div className="absolute bottom-0 w-64 border-t border-gray-800 p-4">
-          <button onClick={logout} className="w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700">
-            Logout
+          <div className="mb-3 text-sm text-gray-300">
+            <div className="font-medium text-white">{user?.name}</div>
+            <div>{user?.email}</div>
+          </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-60"
+          >
+            {loggingOut ? "Logging out..." : "Logout"}
           </button>
         </div>
       </aside>

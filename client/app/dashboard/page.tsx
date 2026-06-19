@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui';
@@ -10,30 +9,26 @@ import { DashboardStats } from '@/lib/types';
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
     const fetchStats = async () => {
       try {
         const res = await api.dashboard.stats();
         setStats(res.data);
       } catch (error) {
         console.error('Failed to fetch stats:', error);
+        setError('Failed to load dashboard statistics.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [router]);
+  }, []);
 
-  if (loading || !stats) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!stats) return <div className="p-6 text-red-600">{error || 'Unable to load dashboard.'}</div>;
 
   return (
     <div className="space-y-6">
