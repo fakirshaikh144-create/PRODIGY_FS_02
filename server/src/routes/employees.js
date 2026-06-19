@@ -6,15 +6,19 @@ import {
   getEmployees,
   updateEmployee
 } from '../controllers/employeeController.js';
-import { employeeCreateValidator, employeeUpdateValidator } from '../validators/employeeValidator.js';
+import {
+  employeeCreateValidator,
+  employeeIdValidator,
+  employeeUpdateValidator
+} from '../validators/employeeValidator.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 
 const router = express.Router();
 
 router.get('/', getEmployees);
-router.get('/:id', getEmployee);
+router.get('/:id', validateRequest(employeeIdValidator), getEmployee);
 router.post('/', validateRequest(employeeCreateValidator), createEmployee);
 router.put('/:id', validateRequest(employeeUpdateValidator), updateEmployee);
-router.delete('/:id', deleteEmployee);
+router.delete('/:id', validateRequest(employeeIdValidator), deleteEmployee);
 
 export default router;

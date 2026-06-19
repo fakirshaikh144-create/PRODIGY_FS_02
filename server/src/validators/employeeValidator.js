@@ -5,6 +5,9 @@ const dateField = z.coerce.date({
   invalid_type_error: 'Please provide a valid date of joining.',
   required_error: 'Date of joining is required.'
 });
+const employeeParams = z.object({
+  id: z.string().min(1, 'Employee ID parameter is required.')
+});
 
 export const employeeCreateValidator = z.object({
   body: z.object({
@@ -23,6 +26,7 @@ export const employeeCreateValidator = z.object({
 });
 
 export const employeeUpdateValidator = z.object({
+  params: employeeParams,
   body: z.object({
     employeeId: z.string().min(3).optional(),
     fullName: z.string().min(3).optional(),
@@ -36,4 +40,8 @@ export const employeeUpdateValidator = z.object({
     address: z.string().min(5).optional(),
     emergencyContact: z.string().min(5).optional()
   })
+});
+
+export const employeeIdValidator = z.object({
+  params: employeeParams
 });
